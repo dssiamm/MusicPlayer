@@ -7,8 +7,6 @@ import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.media.MediaPlayer;
 import android.os.AsyncTask;
-import android.os.Handler;
-import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
@@ -85,9 +83,7 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 protected Object doInBackground(Object[] objects) {
                     while (mediaPlayer != null) {
-                        Message msg = new Message();
-                        msg.what = mediaPlayer.getCurrentPosition();
-                        musicProgressHandler.sendMessage(msg);
+                        musicPlayBar.setProgress(mediaPlayer.getCurrentPosition());
                         try {
                             Thread.sleep(1000);
                         } catch (InterruptedException ex) {
@@ -101,17 +97,6 @@ public class MainActivity extends AppCompatActivity {
 
         return musicSeekBarUpdater;
     }
-
-    private Handler musicProgressHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            int currentProgress = msg.what;
-
-            musicPlayBar.setProgress(currentProgress);
-
-            super.handleMessage(msg);
-        }
-    };
 
     @Override
     protected void onPause() {
