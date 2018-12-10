@@ -6,15 +6,26 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.media.MediaPlayer;
+import android.os.AsyncTask;
+import android.os.Handler;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
+import android.util.Log;
 import android.view.View;
+import android.widget.Button;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
 
+    private final String TAG = "MusicPlayer";
+    AsyncTask musicSeekBarUpdater;
     private MediaPlayer mediaPlayer;
+    private int songDuration;
+    private Button btnPlayPause, btnStop;
+    private SeekBar musicPlayBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -26,83 +37,152 @@ public class MainActivity extends AppCompatActivity {
         TextView textView = (TextView) findViewById(R.id.song_text);
         textView.setMovementMethod(new ScrollingMovementMethod());
 
+        mediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.scorpions_white_dove);
+        mediaPlayer.seekTo(0);
+        songDuration = mediaPlayer.getDuration();
 
-        findViewById(R.id.btn_play).setOnClickListener(new View.OnClickListener()
-        {
-            @Override public void onClick(View v)
-            {
-                if (mediaPlayer == null) {
-                    mediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.scorpions_white_dove);
-                    mediaPlayer.start();
+        musicPlayBar = (SeekBar) findViewById(R.id.music_play_bar);
+        musicPlayBar.setMax(songDuration);
+        musicPlayBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if(fromUser) {
+                    mediaPlayer.seekTo(progress);
+                    musicPlayBar.setProgress(progress);
                 }
+            }
 
-                if (!mediaPlayer.isPlaying()) {
-                    mediaPlayer.start();
-                }
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) { }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) { }
+        });
+
+        btnPlayPause = (Button) findViewById(R.id.btn_play);
+        btnPlayPause.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                playPause();
             }
         });
 
-        findViewById(R.id.btn_pause).setOnClickListener(new View.OnClickListener()
-        {
-            @Override public void onClick(View v)
-            {
-                if (mediaPlayer != null) {
-                    if (mediaPlayer.isPlaying()) {
-                        mediaPlayer.pause();
-                    }
-                }
+        btnStop = (Button) findViewById(R.id.btn_stop);
+        btnStop.setVisibility(View.INVISIBLE);
+        btnStop.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                stop();
             }
         });
 
-        findViewById(R.id.btn_stop).setOnClickListener(new View.OnClickListener()
-        {
-            @Override public void onClick(View v)
-            {
-                if (mediaPlayer != null) {
-                    mediaPlayer.stop();
-                    mediaPlayer.release();
-                    mediaPlayer = null;
-                }
-            }
-        });
+        getMusicUpdater().execute();
     }
+
+    private AsyncTask getMusicUpdater() {
+        if (mediaPlayer != null) {
+            musicSeekBarUpdater = new AsyncTask() {
+                @Override
+                protected Object doInBackground(Object[] objects) {
+                    while (mediaPlayer != null) {
+                        Message msg = new Message();
+                        msg.what = mediaPlayer.getCurrentPosition();
+                        musicProgressHandler.sendMessage(msg);
+                        try {
+                            Thread.sleep(1000);
+                        } catch (InterruptedException ex) {
+                            Log.e(TAG, ex.toString());
+                        }
+                    }
+                    return null;
+                }
+            };
+        }
+
+        return musicSeekBarUpdater;
+    }
+
+    private Handler musicProgressHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+            int currentProgress = msg.what;
+
+            musicPlayBar.setProgress(currentProgress);
+
+            super.handleMessage(msg);
+        }
+    };
 
     @Override
     protected void onPause() {
-        NotificationActions.musicControl(this);
+        if (!NotificationActions.isAlreadyCreated) {
+            NotificationActions.musicControl(this);
 
-        BroadcastReceiver broadcastReceiver = new BroadcastReceiver()
-        {
-            @Override public void onReceive(Context context, Intent intent)
+            BroadcastReceiver broadcastReceiver = new BroadcastReceiver()
             {
-                if (intent.getAction() != null) {
-                    switch (intent.getAction()) {
-                        case NotificationActions.START_PLAY:
-                            findViewById(R.id.btn_play).performClick();
-                            break;
-                        case NotificationActions.PAUSE_PLAY:
-                            findViewById(R.id.btn_pause).performClick();
-                            break;
-                        case NotificationActions.STOP_PLAY:
-                            findViewById(R.id.btn_stop).performClick();
-                            break;
+                @Override
+                public void onReceive(Context context, Intent intent)
+                {
+                    if (intent.getAction() != null) {
+                        switch (intent.getAction()) {
+                            case NotificationActions.START_PLAY:
+                                playPause();
+                                break;
+                            case NotificationActions.STOP_PLAY:
+                                stop();
+                                break;
+                            default:
+                                Log.e(TAG, "Unknown intent param");
+                                break;
+                        }
                     }
                 }
-            }
-        };
+            };
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(NotificationActions.PAUSE_PLAY);
-        filter.addAction(NotificationActions.START_PLAY);
-        filter.addAction(NotificationActions.STOP_PLAY);
+            IntentFilter filter = new IntentFilter();
+            filter.addAction(NotificationActions.START_PLAY);
+            filter.addAction(NotificationActions.STOP_PLAY);
 
-        getApplicationContext().registerReceiver(broadcastReceiver, filter);
+            getApplicationContext().registerReceiver(broadcastReceiver, filter);
+        }
 
         super.onPause();
     }
 
+    private void playPause() {
+        if(mediaPlayer == null) {
+            mediaPlayer = MediaPlayer.create(getApplicationContext(), R.raw.scorpions_white_dove);
+            getMusicUpdater().execute();
+            btnStop.setVisibility(View.VISIBLE);
+        }
+
+        if (mediaPlayer.isPlaying()) {
+            mediaPlayer.pause();
+            btnPlayPause.setBackgroundResource(R.drawable.ic_action_play);
+        } else {
+            mediaPlayer.start();
+            btnPlayPause.setBackgroundResource(R.drawable.ic_action_pause);
+            btnStop.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void stop() {
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            mediaPlayer = null;
+
+            musicPlayBar.setProgress(0);
+            musicSeekBarUpdater.cancel(true);
+
+            btnStop.setVisibility(View.INVISIBLE);
+            btnPlayPause.setBackgroundResource(R.drawable.ic_action_play);
+        }
+    }
+
     @Override
-    protected void onResume() {
-        super.onResume();
+    protected void onDestroy() {
+        NotificationActions.deleteNotification();
+        super.onDestroy();
     }
 }

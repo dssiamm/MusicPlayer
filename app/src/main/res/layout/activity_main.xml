@@ -1,41 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <LinearLayout
+    <TextView
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="4">
+            android:layout_height="50dp"
+            android:gravity="center"
+            android:textSize="30sp"
+            android:text="@string/song_title"/>
 
-        <TextView
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:textSize="30sp"
-                android:text="@string/song_title"/>
-
-    </LinearLayout>
-
-    <LinearLayout
+    <TextView
+            android:id="@+id/song_text"
+            android:textSize="20sp"
+            android:gravity="center"
+            android:scrollbars="vertical"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:layout_weight="1">
+            android:layout_height="300dp"
+            android:text="@string/song_text"/>
 
-        <TextView
-                android:id="@+id/song_text"
-                android:textSize="20sp"
-                android:gravity="center"
-                android:scrollbars="vertical"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:text="@string/song_text"/>
+    <SeekBar
+            android:id="@+id/music_play_bar"
+            android:layout_width="320dp"
+            android:layout_height="20dp"
+            android:layout_marginTop="50dp"
+            android:layout_marginBottom="25dp"
+            android:layout_gravity="center"
+            android:progress="50"/>
 
-    </LinearLayout>
-
-    <include layout="@layout/music_control_buttons">
+    <include
+            layout="@layout/music_control_buttons">
     </include>
 
 </LinearLayout>
