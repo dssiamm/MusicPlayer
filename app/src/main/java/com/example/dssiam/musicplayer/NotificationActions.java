@@ -7,16 +7,16 @@ import android.content.Intent;
 import android.support.v4.app.NotificationCompat;
 import android.widget.RemoteViews;
 
-public class NotificationActions {
+class NotificationActions {
 
     private static NotificationManager nm;
-    public static boolean isAlreadyCreated = false;
-    public static final String START_PLAY = "com.example.dssiam.musicplayer.START_PLAY";
-    public static final String STOP_PLAY = "com.example.dssiam.musicplayer.STOP_PLAY";
+    static boolean isAlreadyCreated = false;
+    static final String START_PLAY = "com.example.dssiam.musicplayer.START_PLAY";
+    static final String STOP_PLAY = "com.example.dssiam.musicplayer.STOP_PLAY";
 
     private static final int NOTIFICATION_ID = 111;
 
-    public static void musicControl(Context context) {
+    static void musicControl(Context context) {
         RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.music_controls_layout);
 
         NotificationCompat.Builder nc = new NotificationCompat.Builder(context);
@@ -47,9 +47,10 @@ public class NotificationActions {
         view.setOnClickPendingIntent(R.id.btn_stop, pendingStop);
     }
 
-    public static void deleteNotification() {
+    static void deleteNotification() {
         if (nm != null) {
             nm.cancel(NOTIFICATION_ID);
+            isAlreadyCreated = false;
         }
     }
 }

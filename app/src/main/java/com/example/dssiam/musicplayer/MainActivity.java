@@ -19,7 +19,7 @@ import android.widget.TextView;
 public class MainActivity extends AppCompatActivity {
 
     private final String TAG = "MusicPlayer";
-    AsyncTask musicSeekBarUpdater;
+    private AsyncTask musicSeekBarUpdater;
     private MediaPlayer mediaPlayer;
     private int songDuration;
     private Button btnPlayPause, btnStop;
@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
         musicPlayBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if(fromUser) {
+                if(fromUser && mediaPlayer != null) {
                     mediaPlayer.seekTo(progress);
                     musicPlayBar.setProgress(progress);
                 }
